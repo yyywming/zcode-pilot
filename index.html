@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:;">
+<title>ZCode Pilot</title>
+<style>
+  :root{--bg:#0b1220;--bg2:#111c33;--card:#141f36;--line:#2d3e5c;--ink:#e6ecff;--muted:#94a3b8;--accent:#3b82f6;--cyan:#22d3ee;--ok:#34d399;--warn:#fbbf24;--err:#f87171}
+  *{box-sizing:border-box} body{margin:0;font-family:"Microsoft YaHei",system-ui,sans-serif;background:radial-gradient(1200px 600px at 80% -10%,#1b335c 0%,transparent 60%),linear-gradient(180deg,var(--bg),var(--bg2));color:var(--ink);min-height:100vh}
+  header{display:flex;align-items:center;gap:16px;padding:22px 28px;border-bottom:1px solid var(--line)}
+  .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#1d4ed8);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;letter-spacing:.5px}
+  h1{font-size:20px;margin:0} .sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .grow{flex:1}
+  button{border:1px solid var(--line);background:#1a2a47;color:var(--ink);padding:9px 14px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit}
+  button:hover{border-color:#3f5c8a} button.primary{background:var(--accent);border-color:var(--accent);color:#fff} button.ghost{background:transparent}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  main{padding:24px 28px 40px;max-width:1280px;margin:0 auto}
+  .bar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+  .hint{color:var(--muted);font-size:12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+  .card{background:linear-gradient(180deg,#16223b,#121c31);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .row{display:flex;align-items:center;gap:10px}
+  .name{font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pill{font-size:11px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .pill.on{color:#0b1220;background:var(--ok);border-color:var(--ok);font-weight:700}
+  .meta{color:var(--muted);font-size:12px;margin-top:6px}
+  .quota{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#0f1930}
+  .plan{font-size:12px;color:var(--cyan);margin-bottom:8px}
+  .num{font-size:22px;font-weight:800} .num small{font-size:12px;color:var(--muted);font-weight:400}
+  .track{height:8px;border-radius:99px;background:#0a1324;margin:10px 0 6px;overflow:hidden}
+  .fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan));width:0%}
+  .qmeta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+  .actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .actions button{padding:7px 10px;font-size:12px}
+  .empty{margin:8vh auto;text-align:center;max-width:640px;color:var(--muted);line-height:1.9}
+  .empty b{color:var(--ink);font-size:18px;display:block;margin-bottom:8px}
+  .empty .step{color:#cbd5e1}
+  .empty button{margin-top:14px}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#0f1930;border:1px solid var(--line);padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.2s;pointer-events:none;max-width:80vw}
+  .toast.show{opacity:1}
+  .modal{position:fixed;inset:0;background:rgba(2,6,16,.7);display:none;align-items:center;justify-content:center}
+  .modal.show{display:flex}
+  .dialog{width:420px;background:#131f37;border:1px solid var(--line);border-radius:16px;padding:20px}
+  .dialog h3{margin:0 0 6px;font-size:16px} .dialog p{margin:0 0 14px;color:var(--muted);font-size:12px;line-height:1.7}
+  input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0b1528;color:var(--ink);font-family:inherit;font-size:14px;outline:none}
+  input:focus{border-color:var(--accent)}
+  .dialog .actions{justify-content:flex-end;margin-top:14px}
+  .sku{font-size:11px;color:#64748b;margin-top:16px;line-height:1.7}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">ZP</div>
+  <div><h1>ZCode Pilot</h1><div class="sub">ZCode 多账号管理 · 一键切换 · 加密备份</div></div>
+  <div class="grow"></div>
+  <button class="primary" id="btnRefresh">刷新</button>
+  <button id="btnAdd">添加账号</button>
+  <button id="btnCapture">捕获当前登录</button>
+  <button id="btnExport">导出全部</button>
+  <button id="btnImport">导入</button>
+  <button class="ghost" id="btnData">数据目录</button>
+</header>
+<main>
+  <div class="bar">
+    <span class="hint" id="stateLine">正在读取账号…</span>
+    <span class="grow"></span>
+    <span class="hint">账号数据保存在本机 ~/.zcode-switch</span>
+  </div>
+  <div id="accounts" class="grid"></div>
+  <div id="empty" class="empty" style="display:none">
+    <b>还没有账号</b>
+    <div class="step">1. 点「添加账号」，在打开的管理器里用 BigModel / z.ai 登录新账号（不影响当前登录）</div>
+    <div class="step">2. 回到本工具点「刷新」，账号和额度会自动出现</div>
+    <div class="step">3. 已有 ZCode 登录时，也可以点「捕获当前登录」直接收录</div>
+    <button class="primary" id="btnAdd2">打开管理器添加账号</button>
+  </div>
+  <div class="sku">本工具基于 MIT 开源项目 Z·SWITCH (zcode-switch) 的本地引擎构建；账号仅保存在本机。领取套餐请在管理器中操作。</div>
+</main>
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal">
+  <div class="dialog">
+    <h3 id="mTitle">输入密码</h3>
+    <p id="mDesc">导出文件会用该密码加密（PBKDF2 + AES-256-GCM），请牢记。</p>
+    <input id="mInput" type="password" placeholder="密码">
+    <div class="actions">
+      <button class="ghost" id="mCancel">取消</button>
+      <button class="primary" id="mOk">确定</button>
+    </div>
+  </div>
+</div>
+<script>
+const api = window.zcodeApi;
+const $ = (id) => document.getElementById(id);
+let accounts = [];
+let state = null;
+let busy = {};
+
+function toast(text, ms = 2600) {
+  const t = $('toast'); t.textContent = text; t.classList.add('show');
+  clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.remove('show'), ms);
+}
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmt(n) {
+  if (n === null || n === undefined || Number.isNaN(Number(n))) return '—';
+  const v = Number(n);
+  return Math.abs(v) >= 1000 ? v.toFixed(0) : v.toFixed(2).replace(/\.?0+$/, '');
+}
+function why(r) { return r && (r.error || r.message) ? String(r.error || r.message) : '操作失败'; }
+
+async function ensureText(title, desc, minLen, placeholder) {
+  return new Promise((resolve) => {
+    $('mTitle').textContent = title; $('mDesc').textContent = desc;
+    $('mInput').value = ''; $('mInput').placeholder = placeholder || ''; $('modal').classList.add('show'); $('mInput').focus();
+    const done = (v) => { $('modal').classList.remove('show'); cleanup(); resolve(v); };
+    const ok = () => { const v = $('mInput').value.trim(); if (v.length < minLen) { toast(minLen ? `至少 ${minLen} 位` : '请输入内容'); return; } done(v); };
+    const cancel = () => done(null);
+    const key = (e) => { if (e.key === 'Enter') ok(); if (e.key === 'Escape') cancel(); };
+    function cleanup() { $('mOk').removeEventListener('click', ok); $('mCancel').removeEventListener('click', cancel); $('mInput').removeEventListener('keydown', key); }
+    $('mOk').addEventListener('click', ok); $('mCancel').addEventListener('click', cancel); $('mInput').addEventListener('keydown', key);
+  });
+}
+const ensurePassword = (title, desc) => ensureText(title, desc, 6, '密码');
+
+function cardHtml(a) {
+  const active = state && state.active_account_id === a.id;
+  return `<div class="card" data-id="${esc(a.id)}">
+    <div class="row"><div class="name">${esc(a.name || a.id)}</div><div class="grow"></div>
+      ${active ? '<span class="pill on">当前</span>' : ''}
+    </div>
+    <div class="meta">添加于 ${esc((a.created_at || '').slice(0, 16))}</div>
+    <div class="quota" id="q-${esc(a.id)}"><div class="plan">额度加载中…</div></div>
+    <div class="actions">
+      <button data-act="switch" ${active ? 'disabled' : ''}>切换到此账号</button>
+      <button data-act="quota">刷新额度</button>
+      <button data-act="claim">领取</button>
+      <button class="ghost" data-act="del">删除</button>
+    </div>
+  </div>`;
+}
+
+function render() {
+  $('empty').style.display = accounts.length ? 'none' : 'block';
+  $('accounts').innerHTML = accounts.map(cardHtml).join('');
+  $('stateLine').textContent = state
+    ? `共 ${accounts.length} 个账号 · ${state.zcode_running ? 'ZCode 运行中' : 'ZCode 未运行'} · 自动领取：${state.auto_claim ? '开' : '关'}`
+    : '状态读取失败';
+  accounts.forEach(a => loadQuota(a.id));
+}
+
+function quotaHtml(q) {
+  if (!q || q.ok === false) {
+    const msg = why(q);
+    if (/不存在coding plan|没有资格|no coding plan/i.test(msg)) {
+      return `<div class="plan" style="color:#fbbf24">试用 / 免费账号 · 无 Coding Plan</div>
+        <div class="meta">该账号没有订阅套餐，面板不显示套餐额度；ZCode 内仍可使用试用额度（如有）。</div>`;
+    }
+    return `<div class="plan">额度查询失败</div><div class="meta">${esc(msg)}</div>`;
+  }
+  const total = q.total, remaining = q.remaining, used = q.used, pct = q.percent_used;
+  const plan = q.plan_tier || (q.plans && q.plans[0] && q.plans[0].tier) || '套餐';
+  const unit = (q.items && q.items[0] && q.items[0].unit) || 'credits';
+  const reset = (q.items && q.items[0] && (q.items[0].reset || q.items[0].period_end)) || q.plan_expire || '';
+  const p = pct === null || pct === undefined ? (total ? (used / total * 100) : 0) : pct;
+  const width = Math.max(0, Math.min(100, Number(p) || 0));
+  return `<div class="plan">${esc(plan)}${q.is_empty ? ' · 已用尽' : ''}</div>
+    <div class="num">${fmt(remaining)}<small> / ${fmt(total)} ${esc(unit)}</small></div>
+    <div class="track"><div class="fill" style="width:${width}%"></div></div>
+    <div class="qmeta"><span>已用 ${fmt(used)}（${width.toFixed(0)}%）</span><span>${reset ? '重置 ' + esc(String(reset).slice(0, 16)) : ''}</span></div>`;
+}
+
+async function loadQuota(id) {
+  const box = $('q-' + CSS.escape(id));
+  if (!box) return;
+  const r = await api.quota(id);
+  const target = $('q-' + CSS.escape(id));
+  if (target) target.innerHTML = quotaHtml(r);
+}
+
+async function refresh() {
+  $('stateLine').textContent = '正在读取账号…';
+  const st = await api.state();
+  const ls = await api.list();
+  state = st && st.ok !== false ? st : null;
+  accounts = (ls && ls.accounts) || [];
+  render();
+}
+
+async function withBusy(id, fn) {
+  if (busy[id]) return; busy[id] = true;
+  try { await fn(); } finally { busy[id] = false; }
+}
+
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-act]');
+  if (!btn) return;
+  const card = btn.closest('.card'); const id = card && card.dataset.id;
+  if (!id) return;
+  const act = btn.dataset.act;
+  if (act === 'quota') { btn.disabled = true; await loadQuota(id); btn.disabled = false; return; }
+  if (act === 'del') {
+    if (!confirm('确定删除该账号？仅删除本机保存的登录凭据，不影响官方账号。')) return;
+    const r = await api.remove(id); toast(r.ok ? '已删除' : '删除失败：' + why(r)); refresh(); return;
+  }
+  if (act === 'claim') {
+    api.openManager(); toast('已打开管理器，请在「活动领取」中操作'); return;
+  }
+  if (act === 'switch') {
+    await withBusy(id, async () => {
+      btn.disabled = true; btn.textContent = '切换中…';
+      const r = await api.switchAccount(id);
+      toast(r.ok ? '已切换' : '切换失败：' + why(r), 3500);
+      await refresh();
+    });
+  }
+});
+
+$('btnRefresh').addEventListener('click', refresh);
+async function addAccount() { await api.openManager(); toast('已打开管理器：登录新账号后回到本工具点「刷新」'); }
+$('btnAdd').addEventListener('click', addAccount);
+$('btnAdd2').addEventListener('click', addAccount);
+$('btnData').addEventListener('click', () => api.openDataDir());
+$('btnCapture').addEventListener('click', async () => {
+  const name = await ensureText('捕获当前登录', '给这个账号起个名字（至少 1 个字符）。', 1, '账号名称');
+  if (name === null) return;
+  const r = await api.capture(name);
+  toast(r.ok ? '已捕获当前登录' : '捕获失败：' + why(r), 3500); refresh();
+});
+$('btnExport').addEventListener('click', async () => {
+  if (!accounts.length) return toast('还没有账号');
+  const pw = await ensurePassword('导出全部账号', '导出的 .zsb 文件会用该密码加密，请牢记。');
+  if (!pw) return;
+  const r = await api.exportAll(pw);
+  if (r.canceled) return;
+  toast(r.ok ? '已导出' : '导出失败：' + why(r), 3500);
+});
+$('btnImport').addEventListener('click', async () => {
+  const pw = await ensurePassword('导入账号包', '输入导出时设置的密码。');
+  if (!pw) return;
+  const r = await api.importBundle(pw);
+  if (r.canceled) return;
+  toast(r.ok ? '导入完成' : '导入失败：' + why(r), 3500); refresh();
+});
+
+refresh();
+setInterval(() => { if (!document.hidden) refresh(); }, 30000);
+</script>
+</body>
+</html>

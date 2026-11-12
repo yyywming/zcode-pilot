@@ -1,0 +1,51 @@
+{
+  "name": "zcode-pilot",
+  "productName": "ZCode Pilot",
+  "version": "1.0.0",
+  "description": "ZCode 多账号管理与额度面板（本地运行）",
+  "main": "main.js",
+  "author": "yyywming",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^37.6.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.yyywming.zcodepilot",
+    "productName": "ZCode Pilot",
+    "directories": { "output": "release" },
+    "files": ["main.js", "preload.js", "index.html", "build/icon.ico"],
+    "extraResources": [{ "from": "resources/zcode-switch.exe", "to": "zcode-switch.exe" }],
+    "win": {
+      "target": [
+        { "target": "portable", "arch": ["x64"] },
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.ico",
+      "signtoolOptions": {
+        "certificateFile": "certs/zcodepilot-signing.pfx",
+        "certificatePassword": "WBPilotSign2026!",
+        "signingHashAlgorithms": ["sha256"],
+        "rfc3161TimeStampServer": "http://timestamp.digicert.com"
+      }
+    },
+    "portable": { "artifactName": "ZCodePilot-portable.exe" },
+    "electronDownload": { "mirror": "https://npmmirror.com/mirrors/electron/" },
+    "npmRebuild": false,
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ZCode Pilot",
+      "artifactName": "ZCodePilot-Setup-${version}.exe",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

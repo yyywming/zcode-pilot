@@ -1,0 +1,5 @@
+node_modules/
+release/
+resources/zcode-switch.exe
+certs/
+*.log
