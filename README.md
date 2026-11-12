@@ -2,6 +2,13 @@
 
 ZCode 多账号管理与试用号切换器（Windows 桌面版）。
 
+## 下载
+
+- GitHub Releases：https://github.com/yyywming/zcode-pilot/releases/tag/v1.0.0
+  - `ZCodePilot-Setup-1.0.0.exe` 安装版
+  - `ZCodePilot-portable.exe` 免安装单文件
+- 蓝奏云（国内镜像）：https://wwbdq.lanzouq.com/b0wa72asf 密码 `dg7n`
+
 ## 功能
 - 账号列表、当前账号标记、一键切换
 - 订阅号显示套餐额度；试用/免费号正常标注，不误报
